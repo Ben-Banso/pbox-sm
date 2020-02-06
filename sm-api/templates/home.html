@@ -1,0 +1,15 @@
+<html ng-app="serversMgmt">
+	<head>
+		<title>Personnal servers management tools</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular.min.js"></script>
+		<script src="{{ url_for('static', filename='servers_manager.js')}}"></script>
+
+	</head>
+	<body>
+		<h3>Servers list</h3>
+		<div ng-controller="servers">
+			<span ng-repeat="server in servers"><a href="/server/[[server.address]]">[[server.address]]</a></span>
+		</div>
+		<div ng-controller="version">Version : [[ version ]]</div>
+	</body>
+</html>
