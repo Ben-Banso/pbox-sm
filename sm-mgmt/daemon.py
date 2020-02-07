@@ -4,7 +4,7 @@ from io import StringIO
 from time import sleep
 import requests
 
-db_path = "sm.db"
+db_path = "../../sm.db"
 
 db_conn = sqlite3.connect(db_path)
 db = db_conn.cursor()
@@ -45,29 +45,29 @@ def get_file_content(ssh, path):
 
 
 def install_requirements(ssh):
-    exec_basic(ssh, 'sudo yum install -y unzip python-gunicorn')
+    exec_basic(ssh, 'sudo dnf install -y unzip python3-gunicorn')
 
 def list_packages(ssh):
     exec_basic(ssh, 'which gunicorn pacman yum dnf apt-get dockeri curl wget unzip')
 
 def install_api(ssh):
-    app_repo_url = "https://github.com/Ben-Banso/nm-daemon/archive/master.zip"
-    app_version_url = "https://raw.githubusercontent.com/Ben-Banso/nm-daemon/master/version.txt"
+    app_repo_url = "https://github.com/Ben-Banso/pbox-na/archive/master.zip"
+    app_version_url = "https://raw.githubusercontent.com/Ben-Banso/pbox-na/master/na-daemon/version.txt"
 
     # Check version
     latest_version = requests.get(app_version_url).content.decode('utf-8')
     print(latest_version)
-    actual_version = get_file_content(ssh, "nm-daemon-master/version.txt").readline()
+    actual_version = get_file_content(ssh, "pbox-na-master/na-daemon/version.txt").readline()
     print(actual_version)
     if(actual_version != latest_version):
         print("update!")
         # Download app
-        exec_basic(ssh, 'sudo kill $(cat /tmp/nm-daemon.pid)')
+        exec_basic(ssh, 'sudo kill $(cat /tmp/na-daemon.pid)')
         exec_basic(ssh, 'rm -rf nm-daemon-master')
         exec_basic(ssh, 'curl -L ' + app_repo_url + ' --output master.zip')
         exec_basic(ssh, 'unzip master.zip')
         exec_basic(ssh, 'rm master.zip')
-        exec_basic(ssh, 'sudo python3 nm-daemon-master/server.py')
+        exec_basic(ssh, 'sudo python3 pbox-na-master/na-daemon/server.py')
         exec_basic(ssh, 'ps aux | grep python')
     else:
         print("do noting")
@@ -80,9 +80,9 @@ def config_users(server, ssh):
         users.append({"user_id":row[0], "public_key":row[1]})
 
 
-    exec_basic(ssh, 'sudo sqlite3 /home/centos/nm.db "DELETE FROM users"')
+    exec_basic(ssh, 'sudo sqlite3 /home/ben/na.db "DELETE FROM users"')
     for user in users:
-        exec_basic(ssh, 'sudo sqlite3 /home/centos/nm.db "INSERT INTO users (user_id, public_key) VALUES(\'' + user['user_id'] + '\', \'' + user['public_key'] + '\')"')
+        exec_basic(ssh, 'sudo sqlite3 /home/ben/na.db "INSERT INTO users (user_id, public_key) VALUES(\'' + user['user_id'] + '\', \'' + user['public_key'] + '\')"')
 
     db_conn.close()
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
         for server in servers:
             ssh = server_connect(server)
-            #install_requirements(ssh)
+            install_requirements(ssh)
             #list_packages(ssh)
             install_api(ssh)
             config_users(server, ssh)
