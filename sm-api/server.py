@@ -13,7 +13,7 @@ import sqlite3
 
 PORT=5000
 
-db_path = "sm.db"
+db_path = "../../sm.db"
 
 db_conn = sqlite3.connect(db_path)
 db = db_conn.cursor()
