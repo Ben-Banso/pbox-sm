@@ -19,12 +19,15 @@ db_path = "../../pbox.db"
 db_conn = sqlite3.connect(db_path)
 db = db_conn.cursor()
 
+# Cluster
+db.execute('''CREATE TABLE IF NOT EXISTS nodes (address text unique)''')
+db.execute('''CREATE TABLE IF NOT EXISTS nodes_infos (address text, key text, value text)''')
+db.execute('''CREATE TABLE IF NOT EXISTS tokens (address text unique, token text, creation_date timestamp)''')
+# Servers
 db.execute('''CREATE TABLE IF NOT EXISTS servers_credentials (address text unique, method text, user text, secret text)''')
 db.execute('''CREATE TABLE IF NOT EXISTS users (user_id text primary key unique, username text, public_key text)''')
 db.execute('''CREATE TABLE IF NOT EXISTS shares (share_id integer primary key autoincrement, user_id text, server_address text, memory int, storage int, cpu int)''')
-db.execute('''CREATE TABLE IF NOT EXISTS nodes (address text unique)''')
-db.execute('''CREATE TABLE IF NOT EXISTS tokens (address text unique, token text, creation_date timestamp)''')
-db.execute('''CREATE TABLE IF NOT EXISTS nodes_infos (address text, key text, value text)''')
+# Account
 db.execute('''CREATE TABLE IF NOT EXISTS certificates (key_id integer primary key autoincrement, private_key text, public_key text)''')
 
 db_conn.close()

@@ -8,6 +8,23 @@ myApp.controller("version", function($scope, $http){
 });
 
 
+myApp.controller("external", function($scope, $http){
+
+	
+
+	$scope.getNodesList = function() {
+		console.log("Get nodes list");
+
+		$http.get("api/nodes").then(function(response){
+			$scope.nodes = response.data.nodes;
+		});
+	;}
+
+
+	$scope.getNodesList();
+
+});
+
 myApp.controller("servers", function($scope, $http){
 
 	

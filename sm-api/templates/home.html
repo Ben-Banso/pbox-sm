@@ -2,83 +2,121 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
 		<link rel="stylesheet" href="{{ url_for('static', filename='servers_manager.css')}}"></script>
 		<title>Personnal servers management tools</title>
 
 	</head>
 	<body>
-		<h3>Servers list</h3>
-		<div ng-controller="servers">
-			<span ng-repeat="server in servers">[[server.address]] <button type="button" class="btn btn-primaty" ng-click="deleteServer(server)">X</button><br/></span>
+		<div class="row">
+			<!-- Navigation -->
+			<div class="col-md-2">
+				<ul class="nav nav-pills flex-column" id="myNav">
+					<li class="nav-item"><a href="#home" class="nav-link active" data-toggle="pill">Home</a></li>
+					<li class="nav-item"><a href="#cluster" class="nav-link" data-toggle="pill">Cluster</a></li>
+					<li class="nav-item"><a href="#servers" class="nav-link" data-toggle="pill">Servers</a></li>
+					<li class="nav-item"><a href="#account" class="nav-link" data-toggle="pill">Account</a></li>
+				</ul>
+			</div>
+			<!-- Tab content -->
+			<div class="tab-content col-md-10">
+				<!-- Home tab -->
+				<div class="active tab-pane" id="home">
+				</div>
+				<!-- Cluster tab -->
+				<div class="tab-pane" id="cluster">
+					<div ng-controller="external">
+						<h3>External</h3>
+						<span ng-repeat="node in nodes">[[node.address]] <button type="button" class="btn btn-primaty" ng-click="deleteServer(node)">X</button><br/></span>
 
 
-			<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addServer">
-				Add server
-			</button>
-
-			<div class="modal fade" id="addServer" tabindex="-1" role="dialog">
-				<div class="modal-dialog" role="document">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title">Add server</h5>
-						</div>
-						<div class="modal-body">
-							<form id="addServerForm">
-								<div class="form-group row">
-									<label for="serverAddress" class="col-sm-2 col-form-label">Address</label>
-									<div class="col-sm-10">
-										<input type="text" ng-model="serverAddress" id="serverAddress" class="form-control">
-									</div>
-								</div>
-								<div class="form-group row">
-									<label for="authMethod" class="col-sm-2 col-form-label">Method</label>
-									<div class="col-sm-10">
-										<select id="authMethod" ng-model="authMethod" class="custom-select">
-											<option selected>Choose...</option>
-											<option value="password">Password</option>
-											<option value="key">SSH Key</option>
-										</select>
-									</div>
-								</div>
-								<div class="form-group row hidden">
-									<label for="username" class="col-sm-2 col-form-label">Username</label>
-									<div class="col-sm-10">
-										<input type="text" ng-model="username" id="username" class="form-control">
-									</div>
-								</div>
-								<div class="form-group row hidden">
-									<label for="password" class="col-sm-2 col-form-label">Password</label>
-									<div class="col-sm-10">
-										<input type="password" ng-model="password" id="password" class="form-control">
-									</div>
-								</div>
-								<div class="form-group row hidden">
-									<label for="key" class="col-sm-2 col-form-label">SSH Key</label>
-									<div class="col-sm-10">
-										<textarea ng-model="key" id="key" class="form-control"></textarea>
-									</div>
-								</div>
-								<div class="form-group row">
-									<div class="col-sm-10">
-										<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-										<button type="button" class="btn btn-primary" ng-click="submitForm()">Add</button>
-									</div>
-								</div>
-							</form>
-						</div>
 					</div>
 				</div>
-	
-			</div>
-		<!-- End of servers controller -->
-		</div>
+				<!-- Servers tab -->
+				<div class="tab-pane" id="servers">
+					<div class="row">
+						<div ng-controller="servers" class="col-md-2">
+							<h3>Servers</h3>
+							<span ng-repeat="server in servers">[[server.address]] <button type="button" class="btn btn-primaty" ng-click="deleteServer(server)">X</button><br/></span>
 
+
+							<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addServer">
+								Add
+							</button>
+
+							<div class="modal fade" id="addServer" tabindex="-1" role="dialog">
+								<div class="modal-dialog" role="document">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title">New server</h5>
+										</div>
+										<div class="modal-body">
+											<form id="addServerForm">
+												<div class="form-group row">
+													<label for="serverAddress" class="col-sm-2 col-form-label">Address</label>
+													<div class="col-sm-10">
+														<input type="text" ng-model="serverAddress" id="serverAddress" class="form-control">
+													</div>
+												</div>
+												<div class="form-group row">
+													<label for="authMethod" class="col-sm-2 col-form-label">Method</label>
+													<div class="col-sm-10">
+														<select id="authMethod" ng-model="authMethod" class="custom-select">
+															<option selected>Choose...</option>
+															<option value="password">Password</option>
+															<option value="key">SSH Key</option>
+														</select>
+													</div>
+												</div>
+												<div class="form-group row hidden">
+													<label for="username" class="col-sm-2 col-form-label">Username</label>
+													<div class="col-sm-10">
+														<input type="text" ng-model="username" id="username" class="form-control">
+													</div>
+												</div>
+												<div class="form-group row hidden">
+													<label for="password" class="col-sm-2 col-form-label">Password</label>
+													<div class="col-sm-10">
+														<input type="password" ng-model="password" id="password" class="form-control">
+													</div>
+												</div>
+												<div class="form-group row hidden">
+													<label for="key" class="col-sm-2 col-form-label">SSH Key</label>
+													<div class="col-sm-10">
+														<textarea ng-model="key" id="key" class="form-control"></textarea>
+													</div>
+												</div>
+												<div class="form-group row">
+													<div class="col-sm-10">
+														<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+														<button type="button" class="btn btn-primary" ng-click="submitForm()">Add</button>
+													</div>
+												</div>
+											</form>
+										</div>
+									</div>
+								</div>
+	
+							</div>
+						</div>
+						<!-- End of servers controller -->
+
+					<!-- End of external controller -->
+					</div>
+				</div>
+				<!-- Home tab -->
+				<div class="tab-pane" id="Account">
+					Generate key
+				</div>
+			</div>
+		</div>
 		<div ng-controller="version">Version : [[ version ]]</div>
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular.min.js"></script>
-		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 		<script src="{{ url_for('static', filename='servers_manager.js')}}"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
 	</body>
 </html>
