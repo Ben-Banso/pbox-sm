@@ -8,12 +8,13 @@ from flask import (
 
 
 import uuid
+from Crypto.PublicKey import RSA
 
 import sqlite3
 
 PORT=5000
 
-db_path = "../../sm.db"
+db_path = "../../pbox.db"
 
 db_conn = sqlite3.connect(db_path)
 db = db_conn.cursor()
@@ -21,6 +22,10 @@ db = db_conn.cursor()
 db.execute('''CREATE TABLE IF NOT EXISTS servers_credentials (address text unique, method text, user text, secret text)''')
 db.execute('''CREATE TABLE IF NOT EXISTS users (user_id text primary key unique, username text, public_key text)''')
 db.execute('''CREATE TABLE IF NOT EXISTS shares (share_id integer primary key autoincrement, user_id text, server_address text, memory int, storage int, cpu int)''')
+db.execute('''CREATE TABLE IF NOT EXISTS nodes (address text unique)''')
+db.execute('''CREATE TABLE IF NOT EXISTS tokens (address text unique, token text, creation_date timestamp)''')
+db.execute('''CREATE TABLE IF NOT EXISTS nodes_infos (address text, key text, value text)''')
+db.execute('''CREATE TABLE IF NOT EXISTS certificates (key_id integer primary key autoincrement, private_key text, public_key text)''')
 
 db_conn.close()
 
@@ -260,6 +265,56 @@ def delete_share(share_id):
         db_conn.close()
         abort(400)
     return jsonify({'success':True})
+
+@app.route('/api/nodes')
+def get_nodes():
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+    nodes = []
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    for row in db.execute("SELECT address FROM nodes"):
+        nodes.append({'address': row[0]})
+    db_conn.close()
+    return jsonify({'nodes': nodes})
+
+@app.route('/api/nodes', methods=['POST'])
+def add_node():
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+    if not request.json:
+        abort(400)
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    try:
+        db.execute("INSERT INTO nodes VALUES (?)", [request.json['address']])
+        db_conn.commit()
+        db_conn.close()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'success':True})
+
+@app.route('/api/nodes/<string:node_id>', methods=['DELETE'])
+def delete_node(node_id):
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':

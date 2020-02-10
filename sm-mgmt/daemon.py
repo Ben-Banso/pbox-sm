@@ -4,30 +4,28 @@ from io import StringIO
 from time import sleep
 import requests
 
-db_path = "../../sm.db"
-
-db_conn = sqlite3.connect(db_path)
-db = db_conn.cursor()
-
-db.execute('''CREATE TABLE IF NOT EXISTS servers_credentials (address text unique, method text, user text, secret text)''')
-
-db_conn.close()
+db_path = "../../pbox.db"
 
 def get_servers_list():
     servers = []
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
     for row in db.execute("SELECT address, method, user, secret FROM servers_credentials"):
-        servers.append({"address":row[0], "method":row[1], "user":row[2], "secret":StringIO(row[3])})
+        servers.append({"address":row[0], "method":row[1], "user":row[2], "secret":row[3]})
 
     db_conn.close()
     return servers
 
 def server_connect(server):
-    key = paramiko.RSAKey.from_private_key(servers[0]['secret'])
-    srv_conn = paramiko.SSHClient()
-    srv_conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    srv_conn.connect(servers[0]['address'], username=servers[0]['user'], pkey=key)
+    if(server['method'] == "key"):
+      print(StringIO(server['secret']))
+      key = paramiko.RSAKey.from_private_key(StringIO(server['secret']))
+      srv_conn = paramiko.SSHClient()
+      srv_conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+      srv_conn.connect(server['address'], username=server['user'], pkey=key)
+    else:
+      print("Not implemented yet")
+      return 0
     return srv_conn
 
 def exec_basic(ssh, command):
@@ -45,7 +43,8 @@ def get_file_content(ssh, path):
 
 
 def install_requirements(ssh):
-    exec_basic(ssh, 'sudo dnf install -y unzip python3-gunicorn')
+    exec_basic(ssh, 'sudo dnf install -y unzip python3-flask python3-requests sqlite')
+    exec_basic(ssh, 'sudo pip3 install gunicorn daemon lockfile rsa')
 
 def list_packages(ssh):
     exec_basic(ssh, 'which gunicorn pacman yum dnf apt-get dockeri curl wget unzip')
@@ -67,8 +66,6 @@ def install_api(ssh):
         exec_basic(ssh, 'curl -L ' + app_repo_url + ' --output master.zip')
         exec_basic(ssh, 'unzip master.zip')
         exec_basic(ssh, 'rm master.zip')
-        exec_basic(ssh, 'sudo python3 pbox-na-master/na-daemon/server.py')
-        exec_basic(ssh, 'ps aux | grep python')
     else:
         print("do noting")
 
