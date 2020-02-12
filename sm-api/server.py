@@ -24,9 +24,10 @@ db.execute('''CREATE TABLE IF NOT EXISTS nodes (address text unique)''')
 db.execute('''CREATE TABLE IF NOT EXISTS nodes_infos (address text, key text, value text)''')
 db.execute('''CREATE TABLE IF NOT EXISTS tokens (address text unique, token text, creation_date timestamp)''')
 # Servers
-db.execute('''CREATE TABLE IF NOT EXISTS servers_credentials (address text unique, method text, user text, secret text)''')
-db.execute('''CREATE TABLE IF NOT EXISTS users (user_id text primary key unique, username text, public_key text)''')
-db.execute('''CREATE TABLE IF NOT EXISTS shares (share_id integer primary key autoincrement, user_id text, server_address text, memory int, storage int, cpu int)''')
+db.execute('''CREATE TABLE IF NOT EXISTS servers_credentials (server_id integer primary key autoincrement, address text unique, method text, user text, secret text)''')
+db.execute('''CREATE TABLE IF NOT EXISTS users (username text primary key unique)''')
+db.execute('''CREATE TABLE IF NOT EXISTS public_keys (key_id integer primary key autoincrement, username text, public_key text)''')
+db.execute('''CREATE TABLE IF NOT EXISTS shares (share_id integer primary key autoincrement, username text, server_id int, memory int, storage int, cpu int)''')
 # Account
 db.execute('''CREATE TABLE IF NOT EXISTS certificates (key_id integer primary key autoincrement, private_key text, public_key text)''')
 
@@ -72,8 +73,8 @@ def get_servers():
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
 
-    for row in db.execute("SELECT address FROM servers_credentials"):
-        servers.append({'address': row[0]})
+    for row in db.execute("SELECT server_id, address FROM servers_credentials"):
+        servers.append({'id': row[0], 'address': row[1]})
     db_conn.close()
     return jsonify({'servers': servers})
 
@@ -92,7 +93,7 @@ def add_server():
     db = db_conn.cursor()
 
     try:
-        db.execute("INSERT INTO servers_credentials VALUES (?,?,?,?)", [request.json['address'], request.json['method'], request.json['user'], request.json['secret']])
+        db.execute("INSERT INTO servers_credentials (address, method, user, secret) VALUES (?,?,?,?)", [request.json['address'], request.json['method'], request.json['user'], request.json['secret']])
         db_conn.commit()
         db_conn.close()
     except sqlite3.IntegrityError:
@@ -113,7 +114,7 @@ def delete_server(server_id):
     db = db_conn.cursor()
 
     try:
-        db.execute("DELETE FROM servers_credentials WHERE address=?", [server_id])
+        db.execute("DELETE FROM servers_credentials WHERE server_id=?", [server_id])
         db_conn.commit()
         db_conn.close()
     except sqlite3.IntegrityError:
@@ -131,15 +132,35 @@ def get_server(server_id):
     """
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
-    server = []
+    server = ""
     try:
-        for row in db.execute("SELECT address, secret FROM servers_credentials WHERE address=?", [server_id]):
-            server.append({"address": row[0], "secret": row[1]})
+        for row in db.execute("SELECT server_id, address FROM servers_credentials WHERE server_id=?", [server_id]):
+            server = {"id": row[0], "address": row[1]}
         db_conn.close()
     except sqlite3.IntegrityError:
         db_conn.close()
         abort(400)
     return jsonify({'server':server})
+
+@app.route('/api/servers/<string:server_id>/shares')
+def get_server_shares(server_id):
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+    shares = []
+    try:
+        for row in db.execute("SELECT share_id, username FROM shares WHERE server_id=?", [server_id]):
+            shares.append({"id": row[0], "username": row[1]})
+        db_conn.close()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'shares':shares})
 
 @app.route('/api/users')
 def get_users():
@@ -154,9 +175,8 @@ def get_users():
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
 
-    for row in db.execute("SELECT user_id, username, public_key FROM users"):
-        users.append({'id': row[0], 'username': row[1], 'public_key': row[2]})
-        print(row[2])
+    for row in db.execute("SELECT username FROM users"):
+        users.append({'username': row[0]})
     db_conn.close()
     return jsonify({'users': users})
 
@@ -177,7 +197,7 @@ def add_user():
     db = db_conn.cursor()
 
     try:
-        db.execute("INSERT INTO users (user_id, username, public_key) VALUES (?,?,?)", [user_uuid, request.json['username'], request.json['public_key']])
+        db.execute("INSERT INTO users (username) VALUES (?)", [request.json['username']])
         db_conn.commit()
         db_conn.close()
     except sqlite3.IntegrityError:
@@ -185,8 +205,8 @@ def add_user():
         abort(400)
     return jsonify({'success':True})
 
-@app.route('/api/users/<string:user_id>', methods=['DELETE'])
-def delete_user(user_id):
+@app.route('/api/users/<string:username>', methods=['DELETE'])
+def delete_user(username):
     """
     This function just responds to the browser ULR
     localhost:5000/
@@ -198,7 +218,7 @@ def delete_user(user_id):
     db = db_conn.cursor()
 
     try:
-        db.execute("DELETE FROM users WHERE user_id=?", [user_id])
+        db.execute("DELETE FROM users WHERE username=?", [username])
         db_conn.commit()
         db_conn.close()
     except sqlite3.IntegrityError:
@@ -240,7 +260,7 @@ def add_share():
     db = db_conn.cursor()
 
     try:
-        db.execute("INSERT INTO shares (user_id, server_address) VALUES (?,?)", [request.json['user_id'], request.json['server_address']])
+        db.execute("INSERT INTO shares (username, server_id) VALUES (?,?)", [request.json['username'], request.json['server_id']])
         db_conn.commit()
         db_conn.close()
     except sqlite3.IntegrityError:
@@ -318,6 +338,119 @@ def delete_node(node_id):
 
     :return:        the rendered template 'home.html'
     """
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    try:
+        db.execute("DELETE FROM nodes WHERE address=?", [node_id])
+        db_conn.commit()
+        db_conn.close()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'success':True})
+
+@app.route('/api/nodes/<string:node_id>')
+def get_node(node_id):
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+    node = []
+    try:
+        for row in db.execute("SELECT address FROM nodes WHERE address=?", [node_id]):
+            node.append({"address": row[0]})
+        db_conn.close()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'node':node})
+
+@app.route('/api/certificates')
+def get_certificates():
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+    certificates = []
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    for row in db.execute("SELECT key_id, public_key FROM certificates"):
+        certificates.append({'id': row[0], 'public_key':row[1]})
+    db_conn.close()
+    return jsonify({'certificates': certificates})
+
+@app.route('/api/certificates/<string:certificate_id>')
+def get_certificate(certificate_id):
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+    certificates = []
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    for row in db.execute("SELECT key_id, public_key, private_key FROM certificates"):
+        certificate = [{'id': row[0], 'public_key':row[1], 'private_key': row[2]}]
+    db_conn.close()
+    return jsonify({'certificate': certificate})
+
+@app.route('/api/certificates', methods=['POST'])
+def generate_certificate():
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+
+    key = RSA.generate(2048)
+    print(key.exportKey().decode())
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+    try:
+        db.execute("INSERT INTO certificates (private_key, public_key) VALUES (?,?)", [key.exportKey().decode(), key.publickey().exportKey().decode()])
+        db_conn.commit()
+        db_conn.close()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'success':True})
+
+
+@app.route('/api/certificates/<string:certificate_id>', methods=['DELETE'])
+def delete_certificate(certificate_id):
+    """
+    This function just responds to the browser ULR
+    localhost:5000/
+
+    :return:        the rendered template 'home.html'
+    """
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    try:
+        db.execute("DELETE FROM certificates WHERE key_id=?", [certificate_id])
+        db_conn.commit()
+        db_conn.close()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'success':True})
+
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':
