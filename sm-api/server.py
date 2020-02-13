@@ -29,7 +29,8 @@ db.execute('''CREATE TABLE IF NOT EXISTS users (username text primary key unique
 db.execute('''CREATE TABLE IF NOT EXISTS public_keys (key_id integer primary key autoincrement, username text, public_key text)''')
 db.execute('''CREATE TABLE IF NOT EXISTS shares (share_id integer primary key autoincrement, username text, server_id int, memory int, storage int, cpu int)''')
 # Account
-db.execute('''CREATE TABLE IF NOT EXISTS certificates (key_id integer primary key autoincrement, private_key text, public_key text)''')
+db.execute('''CREATE TABLE IF NOT EXISTS certificates (key_id integer primary key autoincrement, private_key text, public_key text, status text, creation_date timestamp, revocation_date timestamp)''')
+db.execute('''CREATE TABLE IF NOT EXISTS config (key text primary key unique, value text)''')
 
 db_conn.close()
 
@@ -174,7 +175,8 @@ def get_users():
 
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
-
+    for row in db.execute("SELECT key, value FROM config where key='username'"):
+        users.append({'username': row[1]})
     for row in db.execute("SELECT username FROM users"):
         users.append({'username': row[0]})
     db_conn.close()
@@ -262,6 +264,18 @@ def add_share():
     try:
         db.execute("INSERT INTO shares (username, server_id) VALUES (?,?)", [request.json['username'], request.json['server_id']])
         db_conn.commit()
+
+        # Check if share is to owner
+        infos ={}
+        for row in db.execute("SELECT key, value FROM config where key='username'"):
+            infos[row[0]] = row[1]
+
+        # If yes, add a node to the cluster
+        print(request.json['server_address'])
+        if(request.json['username'] == infos['username']):
+            print("yes it is")
+            db.execute("INSERT INTO nodes (address) VALUES (?)", [request.json['server_address']])
+            db_conn.commit()
         db_conn.close()
     except sqlite3.IntegrityError:
         db_conn.close()
@@ -369,6 +383,47 @@ def get_node(node_id):
         db_conn.close()
         abort(400)
     return jsonify({'node':node})
+
+
+@app.route('/api/account')
+def get_account():
+    """
+    Get all the account settings
+
+    :return:        a full list of user settings as JSON
+    """
+    infos = {}
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    for row in db.execute("SELECT key, value FROM config"):
+        infos[row[0]] = row[1]
+    db_conn.close()
+    return jsonify({'infos': infos})
+
+@app.route('/api/account/register', methods=['POST'])
+def register_account():
+    """
+    Register the username locally, and generate the first certificate
+
+    :return:        the rendered template 'home.html'
+    """
+    if not request.json:
+        abort(400)
+
+    db_conn = sqlite3.connect(db_path)
+    db = db_conn.cursor()
+
+    try:
+        db.execute("INSERT INTO config ('key','value') VALUES (?,?)", ["username", request.json['username']])
+        db_conn.commit()
+        db_conn.close()
+        generate_certificate()
+    except sqlite3.IntegrityError:
+        db_conn.close()
+        abort(400)
+    return jsonify({'success':True})
 
 @app.route('/api/certificates')
 def get_certificates():

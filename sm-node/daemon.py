@@ -38,7 +38,7 @@ def get_node_token(node):
         private_key = row[0]
     pkey = rsa.PrivateKey.load_pkcs1(private_key)
     response = b64encode(rsa.sign(challenge.encode('utf-8'), pkey, "SHA-512")).decode('utf-8')
-
+    print("before step 2")
     r = requests.post('http://' + node + ':5001/api/auth', data=json.dumps({'challenge':challenge, 'response': response}), headers={'content-type':'application/json'})
     token = r.json()['token']
 

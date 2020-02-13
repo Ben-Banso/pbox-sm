@@ -10,8 +10,8 @@ def get_servers_list():
     servers = []
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
-    for row in db.execute("SELECT address, method, user, secret FROM servers_credentials"):
-        servers.append({"address":row[0], "method":row[1], "user":row[2], "secret":row[3]})
+    for row in db.execute("SELECT address, method, user, secret, server_id FROM servers_credentials"):
+        servers.append({"address":row[0], "method":row[1], "user":row[2], "secret":row[3], "id":row[4]})
 
     db_conn.close()
     return servers
@@ -73,13 +73,18 @@ def config_users(server, ssh):
     users = []
     db_conn = sqlite3.connect(db_path)
     db = db_conn.cursor()
-    for row in db.execute("SELECT shares.user_id, users.public_key FROM shares INNER JOIN users ON shares.user_id = users.user_id WHERE shares.server_address=?", [server['address']]):
-        users.append({"user_id":row[0], "public_key":row[1]})
+    for row in db.execute("SELECT shares.username, public_keys.public_key FROM shares INNER JOIN public_keys ON shares.username = public_keys.username WHERE shares.server_id=?", [server['id']]):
+        users.append({"username":row[0], "public_key":row[1]})
+    for row in db.execute("SELECT (SELECT value FROM config where key='username'), certificates.public_key FROM certificates"):
+        users.append({"username":row[0], "public_key":row[1]})
 
 
+    exec_basic(ssh, 'sudo sqlite3 /home/ben/na.db "CREATE TABLE IF NOT EXISTS users (username text, public_key text)"')
     exec_basic(ssh, 'sudo sqlite3 /home/ben/na.db "DELETE FROM users"')
     for user in users:
-        exec_basic(ssh, 'sudo sqlite3 /home/ben/na.db "INSERT INTO users (user_id, public_key) VALUES(\'' + user['user_id'] + '\', \'' + user['public_key'] + '\')"')
+        print(user['username'])
+        exec_basic(ssh, 'sudo sqlite3 /home/ben/na.db "INSERT INTO users (username, public_key) VALUES(\'' + user['username'] + '\', \'' + user['public_key'] + '\')"')
+    exec_basic(ssh, 'sudo  chown ben /home/ben/na.db')
 
     db_conn.close()
 

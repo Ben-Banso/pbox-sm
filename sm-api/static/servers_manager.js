@@ -8,6 +8,8 @@ myApp.controller("version", function($scope, $http){
 });
 
 myApp.controller("server-details", function($scope, $http){
+
+
 	$scope.$on("display-server-details", function(evt, data){
 		console.log("display server");
 		$("#serverDetails").removeClass("hidden");
@@ -36,7 +38,8 @@ myApp.controller("server-details", function($scope, $http){
 
 		data = {
 			"username" : $scope.username,
-			"server_id" : $scope.server_id
+			"server_id" : $scope.server_id,
+			"server_address" : $scope.address
 
 		};
 		$http.post("api/shares", data).then(function(response) {
@@ -44,6 +47,14 @@ myApp.controller("server-details", function($scope, $http){
 		});
 
 		$('#addShareServer').modal('hide');
+		$scope.getServerDetails({"id":$scope.server_id});
+	};
+
+	$scope.deleteShare = function(share) {
+		console.log("%o", share);
+		$http.delete("api/shares/"+share.id).then(function(response){
+			console.log("%o", response);
+		});
 		$scope.getServerDetails({"id":$scope.server_id});
 	};
 });
@@ -57,7 +68,43 @@ myApp.controller("user-details", function($scope, $http){
 	});
 });
 
-myApp.controller("certificat", function($scope, $http){
+myApp.controller("account", function($scope, $http){
+
+	$scope.getAccountInfos = function(){
+		$http.get("api/account").then(function(response){
+			console.log("%o", response.data);
+			console.log("%o", response.data.infos['username']);
+			if(! response.data.infos['username']){
+				// Show registration formular
+				$("#accountRegister").removeClass("hidden");
+				$("#accountInfos").addClass("hidden");
+			}
+			else {
+				// Show details
+				$("#accountInfos").removeClass("hidden");
+				$("#accountRegister").addClass("hidden");
+
+				$scope.username = response.data.infos['username'];
+			}
+		});
+	};
+
+
+	$scope.registerAccount = function() {
+		data = {
+			"username" : $scope.username
+		};
+
+		$http.post("api/account/register", data).then(function(response){
+			if(response.status != 200){
+				console.log("%o", response);
+			}
+			else {
+				$scope.getAccountInfos();
+			}
+		});
+	};
+
 	$scope.getPubKey = function() {
 		$http.get("api/certificates").then(function(response){
 			$scope.public_key = response.data.certificates[0].public_key;
@@ -66,16 +113,19 @@ myApp.controller("certificat", function($scope, $http){
 
 	$scope.generateCert = function() {
 		$http.post("api/certificates").then(function(response){
-			console.log("%o", response.data);
+			if(response.status != 200){
+				console.log("%o", response);
+			}
 		});
-	};
 
+	};
+	$scope.getAccountInfos();
 	$scope.getPubKey();
 });
 
 myApp.controller("users", function($scope, $http, $rootScope){
 
-	
+
 
 	$scope.getUsersList = function() {
 		console.log("Get users list");
@@ -120,14 +170,15 @@ myApp.controller("users", function($scope, $http, $rootScope){
 
 });
 
-myApp.controller("external", function($scope, $http){
+myApp.controller("cluster", function($scope, $http){
 
-	
+
 
 	$scope.getNodesList = function() {
 		console.log("Get nodes list");
 
 		$http.get("api/nodes").then(function(response){
+			console.log("%o", response.data);
 			$scope.nodes = response.data.nodes;
 		});
 	;}
@@ -139,7 +190,7 @@ myApp.controller("external", function($scope, $http){
 
 myApp.controller("servers", function($scope, $http, $rootScope){
 
-	
+
 
 	$scope.getServersList = function() {
 		console.log("Get servers list");

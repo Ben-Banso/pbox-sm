@@ -26,8 +26,8 @@
 				</div>
 				<!-- Cluster tab -->
 				<div class="tab-pane" id="cluster">
-					<div ng-controller="external">
-						<h3>External</h3>
+					<div ng-controller="cluster">
+						<h3>Nodes</h3>
 						<span ng-repeat="node in nodes">[[node.address]] <button type="button" class="btn btn-primaty" ng-click="deleteServer(node)">X</button><br/></span>
 
 
@@ -97,7 +97,7 @@
 										</div>
 									</div>
 								</div>
-	
+
 							</div>
 						</div>
 						<!-- End of servers controller -->
@@ -178,10 +178,27 @@
 				</div>
 				<!-- Home tab -->
 				<div class="tab-pane" id="Account">
-					Generate key
-					<div ng-controller="certificat">
-						<textarea>[[public_key]]</textarea>
-						<button type="button" ng-click="generateCert()">Generate</button>
+					<div ng-controller="account">
+						<div id="accountRegister" class="hidden"><!-- Regiser formular -->
+							<form id="registerForm">
+								<div class="form-group row">
+									<label for="username" class="col-sm-2 col-form-label">Username</label>
+									<div class="col-sm-10">
+										<input type="text" ng-model="username" id="username" class="form-control">
+									</div>
+								</div>
+								<div class="form-group row">
+									<div class="col-sm-10">
+										<button type="button" class="btn btn-primary" ng-click="registerAccount()">Add</button>
+									</div>
+								</div>
+							</form>
+						</div>
+						<div id="accountInfos">
+							<p>Username : [[username]]</p>
+							<textarea>[[public_key]]</textarea>
+							<button type="button" ng-click="generateCert()">Generate</button>
+						</div>
 					</div>
 				</div>
 			</div>
