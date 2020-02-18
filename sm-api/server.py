@@ -6,8 +6,6 @@ from flask import (
     render_template
 )
 
-
-import uuid
 from Crypto.PublicKey import RSA
 
 import sqlite3
