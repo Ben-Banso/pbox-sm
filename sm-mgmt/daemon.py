@@ -43,8 +43,7 @@ def get_file_content(ssh, path):
 
 
 def install_requirements(ssh):
-    exec_basic(ssh, 'sudo dnf install -y unzip python3-flask python3-requests sqlite')
-    exec_basic(ssh, 'sudo pip3 install gunicorn daemon lockfile rsa')
+    exec_basic(ssh, 'sudo pip3 install rsa')
 
 def list_packages(ssh):
     exec_basic(ssh, 'which gunicorn pacman yum dnf apt-get dockeri curl wget unzip')
